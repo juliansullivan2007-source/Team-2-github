@@ -1,7 +1,7 @@
-//yan branch
+
 
 // --- INPUTS (copper tape circuits) ---
-int inputPins[5] = {2, 3, 4, 5, 6};
+int inputPins[5] = {2, 4, 6, 8, 12};
 
 // --- SERVOS ---
 #include <Servo.h>
