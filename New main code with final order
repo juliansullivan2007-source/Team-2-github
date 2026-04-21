@@ -1,0 +1,158 @@
+#include <Servo.h>
+
+// servos 
+Servo servo1; // 360
+Servo servo2; // 360
+Servo servo3; // 180
+Servo servo4; // 360 (FIXED)
+
+// pins
+int inputs[5] = {2, 4, 6, 8, 12};
+int piezoPin = 3;
+
+// state
+int step = 0;
+
+// input helpers
+bool isPressed(int pin) {
+  if (digitalRead(pin) == LOW) {
+    delay(25);
+    return digitalRead(pin) == LOW;
+  }
+  return false;
+}
+
+void waitForRelease(int pin) {
+  while (digitalRead(pin) == LOW) {
+    delay(10);
+  }
+  delay(120);
+}
+
+void waitForAllRelease() {
+  bool allReleased = false;
+
+  while (!allReleased) {
+    allReleased = true;
+
+    for (int i = 0; i < 5; i++) {
+      if (digitalRead(inputs[i]) == LOW) {
+        allReleased = false;
+      }
+    }
+
+    delay(20);
+  }
+
+  delay(150);
+}
+
+//phone ring
+void playRing() {
+  for (int i = 0; i < 3; i++) {
+    tone(piezoPin, 1000);
+    delay(200);
+    noTone(piezoPin);
+
+    delay(200);
+
+    tone(piezoPin, 1000);
+    delay(200);
+    noTone(piezoPin);
+
+    delay(1000);
+  }
+}
+
+void resetServos() {
+  // 360 servos STOP
+  servo1.write(90);
+  servo2.write(90);
+  servo4.write(90);  // ⭐ FIX: stop instead of spin
+
+  // 180 servo positions
+  servo3.write(0);   // adjust if needed
+
+  delay(1000);
+}
+
+
+void setup() {
+  for (int i = 0; i < 5; i++) {
+    pinMode(inputs[i], INPUT_PULLUP);
+  }
+
+  servo1.attach(5);
+  servo2.attach(7);
+  servo3.attach(9);
+  servo4.attach(11);
+
+  pinMode(piezoPin, OUTPUT);
+
+  delay(500);       // power stabilize
+  resetServos();    // set correct starting state
+  delay(1000);      // settle
+}
+
+
+void loop() {
+
+  // STEP 0  PIEZO
+  if (step == 0) {
+    if (isPressed(inputs[0])) {
+      playRing();
+      waitForAllRelease();
+      step = 1;
+    }
+  }
+
+  // STEP 1 SERVO 1 (360)
+  else if (step == 1) {
+    if (isPressed(inputs[1])) {
+      servo1.write(180);
+      delay(1000);
+      servo1.write(90);
+
+      waitForRelease(inputs[1]);
+      step = 2;
+    }
+  }
+
+  // STEP 2  SERVO 2 (360)
+  else if (step == 2) {
+    if (isPressed(inputs[2])) {
+      servo2.write(0);
+      delay(1000);
+      servo2.write(90);
+
+      waitForRelease(inputs[2]);
+      step = 3;
+    }
+  }
+
+  // STEP 3  SERVO 3 (180)
+  else if (step == 3) {
+    if (isPressed(inputs[3])) {
+      servo3.write(0);
+      delay(500);
+      servo3.write(90);
+  servo3.write(0);
+      delay(500);
+      servo3.write(90);
+      waitForRelease(inputs[3]);
+      step = 4;
+    }
+  }
+
+  // STEP 4  SERVO 4 (360 FIXED)
+  else if (step == 4) {
+    if (isPressed(inputs[4])) {
+      servo4.write(180);  // spin
+      delay(500);
+      servo4.write(90);   // stop
+
+      waitForRelease(inputs[4]);
+      step = 5;
+    }
+  }
+}
